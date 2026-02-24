@@ -57,6 +57,24 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        danger: {
+          DEFAULT: "hsl(var(--danger))",
+          foreground: "hsl(var(--danger-foreground))",
+        },
+        chart: {
+          primary: "hsl(var(--chart-primary))",
+          secondary: "hsl(var(--chart-secondary))",
+          accent: "hsl(var(--chart-accent))",
+          muted: "hsl(var(--chart-muted))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
