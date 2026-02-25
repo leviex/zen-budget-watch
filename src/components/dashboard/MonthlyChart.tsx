@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from "recharts";
-import { getMonthlyTotals, formatCurrency } from "@/data/obzData";
+import { useObzData, formatCurrency } from "@/context/ObzDataContext";
 
 interface Props {
   mesFilter?: number | null;
@@ -7,19 +7,16 @@ interface Props {
 }
 
 export default function MonthlyChart({ mesFilter, classificacaoFilter }: Props) {
-  let data = getMonthlyTotals();
-  
-  // Calculate cumulative execution %
+  const { getMonthlyTotals } = useObzData();
+  const data = getMonthlyTotals();
+
   let cumulativePrevisto = 0;
   let cumulativeRealizado = 0;
   const chartData = data.map((d) => {
     cumulativePrevisto += d.previsto;
     cumulativeRealizado += d.realizado;
     const execAcum = cumulativePrevisto > 0 ? (cumulativeRealizado / cumulativePrevisto) * 100 : 0;
-    return {
-      ...d,
-      execAcumulada: Math.round(execAcum * 10) / 10,
-    };
+    return { ...d, execAcumulada: Math.round(execAcum * 10) / 10 };
   });
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -37,24 +34,14 @@ export default function MonthlyChart({ mesFilter, classificacaoFilter }: Props) 
   };
 
   return (
-    <div className="bg-card rounded-lg p-6 shadow-card">
+    <div data-pdf-section data-pdf-page="1" className="bg-card rounded-lg p-6 shadow-card">
       <h3 className="text-base font-semibold text-card-foreground mb-4">Orçado vs Realizado — Mensal</h3>
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 10 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="hsl(214 20% 88%)" />
           <XAxis dataKey="mes" tick={{ fontSize: 12, fill: "hsl(215 16% 47%)" }} />
-          <YAxis
-            yAxisId="left"
-            tick={{ fontSize: 11, fill: "hsl(215 16% 47%)" }}
-            tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-          />
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            tick={{ fontSize: 11, fill: "hsl(215 16% 47%)" }}
-            tickFormatter={(v) => `${v}%`}
-            domain={[0, 120]}
-          />
+          <YAxis yAxisId="left" tick={{ fontSize: 11, fill: "hsl(215 16% 47%)" }} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+          <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fill: "hsl(215 16% 47%)" }} tickFormatter={(v) => `${v}%`} domain={[0, 120]} />
           <Tooltip content={<CustomTooltip />} />
           <Bar yAxisId="left" dataKey="previsto" name="Previsto" fill="hsl(213 40% 50%)" radius={[4, 4, 0, 0]} barSize={28} />
           <Bar yAxisId="left" dataKey="realizado" name="Realizado" fill="hsl(200 70% 55%)" radius={[4, 4, 0, 0]} barSize={28} />

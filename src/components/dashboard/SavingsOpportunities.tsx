@@ -1,4 +1,4 @@
-import { formatCurrency } from "@/data/obzData";
+import { formatCurrency } from "@/context/ObzDataContext";
 
 interface Opportunity {
   solucao: string;
@@ -24,11 +24,9 @@ const totalEconomia = opportunities.reduce((sum, o) => sum + (o.valor || 0), 0);
 
 export default function SavingsOpportunities() {
   return (
-    <div className="bg-card rounded-lg p-6 shadow-card">
+    <div data-pdf-section data-pdf-page="3" className="bg-card rounded-lg p-6 shadow-card">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-card-foreground">
-          💡 Contratações com Possíveis Pontos de Economia
-        </h3>
+        <h3 className="text-base font-semibold text-card-foreground">💡 Contratações com Possíveis Pontos de Economia</h3>
         <span className="text-xs font-mono font-semibold text-destructive bg-destructive/10 px-2 py-1 rounded">
           Potencial: {formatCurrency(totalEconomia)}
         </span>
@@ -46,9 +44,7 @@ export default function SavingsOpportunities() {
             {opportunities.map((o) => (
               <tr key={o.solucao} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                 <td className="py-2.5 px-2 font-medium text-card-foreground">{o.solucao}</td>
-                <td className="py-2.5 px-2 text-right font-mono text-muted-foreground">
-                  {o.valor ? formatCurrency(o.valor) : "—"}
-                </td>
+                <td className="py-2.5 px-2 text-right font-mono text-muted-foreground">{o.valor ? formatCurrency(o.valor) : "—"}</td>
                 <td className="py-2.5 px-2 text-muted-foreground max-w-xs">{o.sugestao || "—"}</td>
               </tr>
             ))}
@@ -56,9 +52,7 @@ export default function SavingsOpportunities() {
           <tfoot>
             <tr className="border-t-2 border-border">
               <td className="py-2.5 px-2 font-semibold text-card-foreground">Total</td>
-              <td className="py-2.5 px-2 text-right font-mono font-semibold text-destructive">
-                {formatCurrency(totalEconomia)}
-              </td>
+              <td className="py-2.5 px-2 text-right font-mono font-semibold text-destructive">{formatCurrency(totalEconomia)}</td>
               <td></td>
             </tr>
           </tfoot>
