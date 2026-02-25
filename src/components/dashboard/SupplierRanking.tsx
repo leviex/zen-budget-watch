@@ -1,7 +1,8 @@
-import { getTopFornecedores, formatCurrency, totalOrcado } from "@/data/obzData";
+import { useObzData, formatCurrency } from "@/context/ObzDataContext";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 
 export default function SupplierRanking() {
+  const { getTopFornecedores, totalOrcado } = useObzData();
   const data = getTopFornecedores().map(f => ({
     ...f,
     fornecedorShort: f.fornecedor.length > 18 ? f.fornecedor.substring(0, 16) + "…" : f.fornecedor,
@@ -20,7 +21,7 @@ export default function SupplierRanking() {
   };
 
   return (
-    <div className="bg-card rounded-lg p-6 shadow-card">
+    <div data-pdf-section data-pdf-page="2" className="bg-card rounded-lg p-6 shadow-card">
       <h3 className="text-base font-semibold text-card-foreground mb-4">Ranking de Fornecedores</h3>
       <ResponsiveContainer width="100%" height={320}>
         <BarChart data={data} layout="vertical" margin={{ left: 10, right: 20 }}>

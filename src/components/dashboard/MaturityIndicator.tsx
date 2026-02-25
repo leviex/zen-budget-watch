@@ -1,37 +1,26 @@
-import { maturidadeIndex } from "@/data/obzData";
+import { useObzData } from "@/context/ObzDataContext";
 
 export default function MaturityIndicator() {
+  const { maturidadeIndex } = useObzData();
   const levels = [
     { label: "Baixa", range: "0–49", color: "bg-danger" },
     { label: "Inicial", range: "50–69", color: "bg-warning" },
     { label: "Gerenciada", range: "70–84", color: "bg-primary" },
     { label: "Alta / Estratégica", range: "85–100", color: "bg-success" },
   ];
-
   const currentLevel = maturidadeIndex < 50 ? 0 : maturidadeIndex < 70 ? 1 : maturidadeIndex < 85 ? 2 : 3;
 
   return (
-    <div className="bg-card rounded-lg p-6 shadow-card">
+    <div data-pdf-section data-pdf-page="3" className="bg-card rounded-lg p-6 shadow-card">
       <h3 className="text-base font-semibold text-card-foreground mb-2">Índice de Maturidade Financeira TI</h3>
       <p className="text-xs text-muted-foreground mb-4">IMOTI = (40×0,25)+(90×0,30)+(85×0,20)+(44×0,25)</p>
-      
       <div className="flex items-center gap-4 mb-4">
         <div className="relative w-24 h-24">
           <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-            <path
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
-              stroke="hsl(210 15% 93%)"
-              strokeWidth="3"
-            />
-            <path
-              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-              fill="none"
+            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="hsl(210 15% 93%)" strokeWidth="3" />
+            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none"
               stroke={maturidadeIndex < 50 ? "hsl(0 72% 51%)" : maturidadeIndex < 70 ? "hsl(38 92% 50%)" : maturidadeIndex < 85 ? "hsl(213 60% 18%)" : "hsl(152 60% 40%)"}
-              strokeWidth="3"
-              strokeDasharray={`${maturidadeIndex}, 100`}
-              strokeLinecap="round"
-            />
+              strokeWidth="3" strokeDasharray={`${maturidadeIndex}, 100`} strokeLinecap="round" />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-xl font-bold text-card-foreground">{maturidadeIndex}</span>

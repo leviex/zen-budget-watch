@@ -1,17 +1,17 @@
 import { AlertTriangle, CheckCircle, Info } from "lucide-react";
-import { sistemas, formatCurrency, formatPercent, totalOrcado, getTotalRealizado } from "@/data/obzData";
+import { useObzData, formatCurrency, formatPercent } from "@/context/ObzDataContext";
 
 export default function AlertsPanel() {
-  // Find items where realizado > previsto by > 10% in any month
-  const alerts: { nome: string; tipo: string; desvio: number; mes: string }[] = [];
-  const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  const { sistemas, totalOrcado, getTotalRealizado } = useObzData();
+  const mesesNames = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
   
+  const alerts: { nome: string; tipo: string; desvio: number; mes: string }[] = [];
   sistemas.forEach(s => {
     s.mensal.forEach((m, i) => {
       if (m.previsto > 0 && m.realizado > 0) {
         const desvio = ((m.realizado - m.previsto) / m.previsto) * 100;
         if (desvio > 10) {
-          alerts.push({ nome: s.nome, tipo: s.classificacao, desvio, mes: meses[i] });
+          alerts.push({ nome: s.nome, tipo: s.classificacao, desvio, mes: mesesNames[i] });
         }
       }
     });
@@ -22,21 +22,16 @@ export default function AlertsPanel() {
   const metaProporcional = (2 / 12) * 100;
 
   return (
-    <div className="bg-card rounded-lg p-6 shadow-card">
+    <div data-pdf-section data-pdf-page="3" className="bg-card rounded-lg p-6 shadow-card">
       <h3 className="text-base font-semibold text-card-foreground mb-4">Alertas e Status</h3>
       <div className="space-y-3">
-        {/* Execution status */}
         <div className="flex items-start gap-3 p-3 rounded-lg bg-success/10">
           <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
           <div>
             <p className="text-xs font-medium text-card-foreground">Execução dentro do esperado</p>
-            <p className="text-xs text-muted-foreground">
-              {formatPercent(execPercent)} executado vs {formatPercent(metaProporcional)} proporcional (2/12 meses)
-            </p>
+            <p className="text-xs text-muted-foreground">{formatPercent(execPercent)} executado vs {formatPercent(metaProporcional)} proporcional (2/12 meses)</p>
           </div>
         </div>
-
-        {/* % TI sobre total */}
         <div className="flex items-start gap-3 p-3 rounded-lg bg-success/10">
           <CheckCircle className="h-4 w-4 text-success mt-0.5 flex-shrink-0" />
           <div>
@@ -44,16 +39,12 @@ export default function AlertsPanel() {
             <p className="text-xs text-muted-foreground">Dentro da faixa saudável (até 4%)</p>
           </div>
         </div>
-
-        {/* Alerts for deviations > 10% */}
         {alerts.length > 0 ? alerts.map((a, i) => (
           <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-warning/10">
             <AlertTriangle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-xs font-medium text-card-foreground">{a.nome}</p>
-              <p className="text-xs text-muted-foreground">
-                Desvio de {formatPercent(a.desvio)} em {a.mes} — {a.tipo}
-              </p>
+              <p className="text-xs text-muted-foreground">Desvio de {formatPercent(a.desvio)} em {a.mes} — {a.tipo}</p>
             </div>
           </div>
         )) : (
@@ -65,8 +56,6 @@ export default function AlertsPanel() {
             </div>
           </div>
         )}
-
-        {/* Maturity alert */}
         <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10">
           <AlertTriangle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
           <div>

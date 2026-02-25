@@ -15,7 +15,7 @@ const Index = () => {
   const [classificacaoFilter, setClassificacaoFilter] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
+    <div id="dashboard-container" className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
       <div className="max-w-[1440px] mx-auto">
         <DashboardHeader />
 
