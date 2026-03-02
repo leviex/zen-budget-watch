@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import type { Sistema } from "@/data/obzData";
+import type { Sistema, PontoMelhoria } from "@/data/obzData";
 
 const REQUIRED_SHEETS = [
   "Painel Executivo",
@@ -23,6 +23,7 @@ export interface ImportResult {
   totalOrcado?: number;
   maturidadeIndex?: number;
   classificacoes?: { nome: string; valor: number; cor: string }[];
+  pontosMelhoria?: PontoMelhoria[];
   rowCount?: number;
 }
 
@@ -122,6 +123,14 @@ export function validateAndParseExcel(buffer: ArrayBuffer): ImportResult {
     const maturidadeIndex = parseIMOTi(imotiData);
     const classificacoes = parseClassificacoes(classData);
 
+    // Parse Pontos de Melhoria (optional sheet)
+    let pontosMelhoria: PontoMelhoria[] | undefined;
+    const pontosSheet = wb.Sheets["Pontos de Melhoria"];
+    if (pontosSheet) {
+      const pontosData = XLSX.utils.sheet_to_json<Record<string, any>>(pontosSheet, { defval: "" });
+      pontosMelhoria = parsePontosMelhoria(pontosData);
+    }
+
     return {
       valid: true,
       errors: [],
@@ -129,6 +138,7 @@ export function validateAndParseExcel(buffer: ArrayBuffer): ImportResult {
       totalOrcado,
       maturidadeIndex,
       classificacoes,
+      pontosMelhoria,
       rowCount: sistemas.length,
     };
   } catch (e: any) {
@@ -222,6 +232,26 @@ function parseIMOTi(data: Record<string, any>[]): number {
   return totalWeight > 0 ? Math.round((totalWeighted / totalWeight) * 10) / 10 : 62.5;
 }
 
+function parsePontosMelhoria(data: Record<string, any>[]): PontoMelhoria[] {
+  if (!data.length) return [];
+  const headers = Object.keys(data[0]);
+  return data
+    .map(row => {
+      const solucaoKey = headers.find(h => h.toLowerCase().includes("solu")) || headers[0];
+      const valorKey = headers.find(h => h.toLowerCase() === "valor" || h.toLowerCase().includes("valor")) || headers[1];
+      const sugestaoKey = headers.find(h => h.toLowerCase().includes("sugest")) || headers[2];
+      // 4th column is the justification
+      const justKey = headers[3] || "";
+      const solucao = String(row[solucaoKey] || "").trim();
+      const rawVal = row[valorKey];
+      const valor = rawVal ? (Number(String(rawVal).replace(/[R$\s.]/g, "").replace(",", ".")) || null) : null;
+      const sugestao = String(row[sugestaoKey] || "").trim();
+      const justificativa = justKey ? String(row[justKey] || "").trim() : "";
+      return { solucao, valor, sugestao, justificativa };
+    })
+    .filter(p => p.solucao !== "" && !p.solucao.toLowerCase().includes("total"));
+}
+
 export function mergeSistemas(existing: Sistema[], incoming: Sistema[]): Sistema[] {
   const map = new Map<string, Sistema>();
   existing.forEach(s => map.set(s.nome, s));
@@ -291,6 +321,12 @@ export function generateTemplateXlsx(): ArrayBuffer {
     { Dimensão: "Eficiência Operacional", Peso: 0.25, Nota: 0 },
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(imotiData), "IMOTi - Calculo");
+
+  // Pontos de Melhoria
+  const pontosData = [
+    { "Solução": "Exemplo Sistema", "Valor": 0, "Sugestão": "Descrição da economia", "Justificativa": "Detalhes e contexto" },
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pontosData), "Pontos de Melhoria");
 
   return XLSX.write(wb, { type: "array", bookType: "xlsx" });
 }

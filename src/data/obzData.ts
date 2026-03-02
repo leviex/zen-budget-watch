@@ -9,6 +9,28 @@ export interface Sistema {
   mensal: { previsto: number; realizado: number }[];
 }
 
+export interface PontoMelhoria {
+  solucao: string;
+  valor: number | null;
+  sugestao: string;
+  justificativa: string;
+}
+
+export const defaultPontosMelhoria: PontoMelhoria[] = [
+  { solucao: "ChatGPT Plus (2x)", valor: 2496, sugestao: "Contratar pacote com HUB de IA's", justificativa: "Objetivo: apoio em criação de fórmulas, medidas DAX, projetos. Uso rotineiro e diário. Áreas: NGE e Senac." },
+  { solucao: "HeyGen", valor: 3681, sugestao: "Contratar pacote com HUB de IA's", justificativa: "App de IA para geração de vídeos com persona Sofia. Uso sob demanda. Áreas: NQI / Senac Labs." },
+  { solucao: "Google AI Pro", valor: 1163, sugestao: "Contratar pacote com HUB de IA's", justificativa: "Foco no NotebookLM: cruzamento de informações entre relatórios, planilhas e documentos de diretrizes." },
+  { solucao: "Bit.ly", valor: 2184, sugestao: "Pode usar versão gratuita ou alternativa", justificativa: "Encurtador de URL e gerador de QRCode. Uso sob demanda. Pagamento será pausado 06/02/2025." },
+  { solucao: "Cachola", valor: null, sugestao: "Sistema de Biblioteca: Verificar duplicidade", justificativa: "Plataforma de distribuição de recursos digitais do DN. Custos custeados 100% pelo DN até agosto de 2026." },
+  { solucao: "Minha Biblioteca", valor: 86160, sugestao: "Sistema de Biblioteca: Verificar duplicidade / Avaliar uso por curso", justificativa: "Acervo Digital para faculdade. Sem alunos cadastrados no momento. Não deve ser renovado ao vencer." },
+  { solucao: "Biblioteca Digital", valor: 22985, sugestao: "Sistema de Biblioteca: Verificar duplicidade", justificativa: "Acervo digital muito acessado por todos os alunos do SENAC/RN. Uso rotineiro." },
+  { solucao: "FLUIG", valor: 64224, sugestao: "Valor a ser pago até Maio/2026 (R$26.810) - Migrar processos para o SoftExpert", justificativa: "Migrar processos para o SoftExpert antes da renovação do contrato." },
+  { solucao: "ORÇAFASCIO", valor: 52752, sugestao: "Avaliar substituição por Contractor Foreman ou Jobber", justificativa: "Avaliar substituição por soluções equivalentes de orçamento e gestão de obras com custo menor." },
+  { solucao: "Tatodesk", valor: 89704, sugestao: "Substituir por solução GENESYS, integrada com IA", justificativa: "Centralização do atendimento multiatendente. Parcialmente atende: não integrado ao CRM." },
+  { solucao: "Evolux Call Center", valor: 140419.07, sugestao: "Substituir por solução GENESYS, integrada com IA", justificativa: "Centralização do canal voz, gravação de chamados. Alto custo mensal. Não integrado ao CRM." },
+  { solucao: "Módulo TOTVS FEEDZ", valor: 153678.81, sugestao: "Microsoft Forms + Power Automate, SharePoint para PDI, Teams, BI", justificativa: "Automação de processos de Gestão de Pessoas. Atende necessidades atuais mas há alternativas Microsoft." },
+];
+
 export const sistemas: Sistema[] = [
   { nome: "DN SP Microsoft", valorAnual: 657410.86, classificacao: "Infraestrutura", criticidade: 1, fornecedor: "SENAC SP / MICROSOFT", contrato: "Pagamento por AL", sugestao: "Revisar licenças E3/E5", mensal: [
     {previsto:0,realizado:0},{previsto:0,realizado:0},{previsto:0,realizado:0},{previsto:0,realizado:0},{previsto:0,realizado:0},{previsto:0,realizado:0},{previsto:0,realizado:0},{previsto:0,realizado:0},{previsto:0,realizado:0},{previsto:657410.86,realizado:0},{previsto:0,realizado:0},{previsto:0,realizado:0}
