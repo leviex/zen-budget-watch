@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { Sistema, sistemas as defaultSistemas, classificacoes as defaultClassificacoes, totalOrcado as defaultTotalOrcado, totalDespesasOrg, percentualTI, colaboradores, custoColabAno, maturidadeIndex as defaultMaturidade, meses, getMonthlyTotals as calcMonthlyTotals, formatCurrency, formatPercent } from "@/data/obzData";
+import { Sistema, PontoMelhoria, defaultPontosMelhoria, sistemas as defaultSistemas, classificacoes as defaultClassificacoes, totalOrcado as defaultTotalOrcado, totalDespesasOrg, percentualTI, colaboradores, custoColabAno, maturidadeIndex as defaultMaturidade, meses, getMonthlyTotals as calcMonthlyTotals, formatCurrency, formatPercent } from "@/data/obzData";
 
 export interface ImportLog {
   data: string;
@@ -17,6 +17,7 @@ interface ObzDataState {
   colaboradores: number;
   custoColabAno: number;
   maturidadeIndex: number;
+  pontosMelhoria: PontoMelhoria[];
   importLogs: ImportLog[];
 }
 
@@ -25,6 +26,7 @@ interface ObzDataContextType extends ObzDataState {
   setClassificacoes: (c: { nome: string; valor: number; cor: string }[]) => void;
   setTotalOrcado: (v: number) => void;
   setMaturidadeIndex: (v: number) => void;
+  setPontosMelhoria: (p: PontoMelhoria[]) => void;
   addImportLog: (log: ImportLog) => void;
   getMonthlyTotals: () => { mes: string; previsto: number; realizado: number }[];
   getTotalRealizado: () => number;
@@ -56,6 +58,7 @@ export function ObzDataProvider({ children }: { children: React.ReactNode }) {
   const [classificacoes, setClassificacoes] = useState(defaultClassificacoes);
   const [totalOrcado, setTotalOrcado] = useState(defaultTotalOrcado);
   const [maturidadeIndex, setMaturidadeIndex] = useState(defaultMaturidade);
+  const [pontosMelhoria, setPontosMelhoria] = useState<PontoMelhoria[]>(defaultPontosMelhoria);
   const [importLogs, setImportLogs] = useState<ImportLog[]>([]);
 
   const addImportLog = useCallback((log: ImportLog) => {
@@ -103,6 +106,7 @@ export function ObzDataProvider({ children }: { children: React.ReactNode }) {
     setClassificacoes(defaultClassificacoes);
     setTotalOrcado(defaultTotalOrcado);
     setMaturidadeIndex(defaultMaturidade);
+    setPontosMelhoria(defaultPontosMelhoria);
   }, []);
 
   return (
@@ -112,6 +116,7 @@ export function ObzDataProvider({ children }: { children: React.ReactNode }) {
       totalOrcado, setTotalOrcado,
       totalDespesasOrg, percentualTI, colaboradores, custoColabAno,
       maturidadeIndex, setMaturidadeIndex,
+      pontosMelhoria, setPontosMelhoria,
       importLogs, addImportLog,
       getMonthlyTotals, getTotalRealizado, getTotalPrevistoAteMes, getTopFornecedores,
       resetToDefaults,

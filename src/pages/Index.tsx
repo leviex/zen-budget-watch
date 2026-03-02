@@ -9,6 +9,7 @@ import SupplierRanking from "@/components/dashboard/SupplierRanking";
 import MaturityIndicator from "@/components/dashboard/MaturityIndicator";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
 import SavingsOpportunities from "@/components/dashboard/SavingsOpportunities";
+import MatrizConsulta from "@/components/dashboard/MatrizConsulta";
 
 const Index = () => {
   const [mesFilter, setMesFilter] = useState<number | null>(null);
@@ -58,6 +59,11 @@ const Index = () => {
         {/* Savings Opportunities */}
         <div className="mb-6">
           <SavingsOpportunities />
+        </div>
+
+        {/* Matriz Consulta */}
+        <div className="mb-6">
+          <MatrizConsulta />
         </div>
 
         {/* Footer */}

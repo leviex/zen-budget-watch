@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function ImportExcelDialog({ open, onOpenChange }: Props) {
-  const { sistemas, totalOrcado, setSistemas, setClassificacoes, setTotalOrcado, setMaturidadeIndex, addImportLog } = useObzData();
+  const { sistemas, totalOrcado, setSistemas, setClassificacoes, setTotalOrcado, setMaturidadeIndex, setPontosMelhoria, addImportLog } = useObzData();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -58,6 +58,7 @@ export default function ImportExcelDialog({ open, onOpenChange }: Props) {
     if (result.classificacoes) setClassificacoes(result.classificacoes);
     setTotalOrcado(result.totalOrcado || finalSistemas.reduce((s, si) => s + si.valorAnual, 0));
     if (result.maturidadeIndex) setMaturidadeIndex(result.maturidadeIndex);
+    if (result.pontosMelhoria && result.pontosMelhoria.length > 0) setPontosMelhoria(result.pontosMelhoria);
 
     addImportLog({
       data: new Date().toISOString(),
