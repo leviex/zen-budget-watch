@@ -37,6 +37,7 @@ interface ObzDataContextType extends ObzDataState {
 
 const ObzDataContext = createContext<ObzDataContextType | null>(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useObzData() {
   const ctx = useContext(ObzDataContext);
   if (!ctx) throw new Error("useObzData must be used within ObzDataProvider");
