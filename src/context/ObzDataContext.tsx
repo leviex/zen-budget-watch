@@ -1,11 +1,39 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
-import { Sistema, PontoMelhoria, defaultPontosMelhoria, sistemas as defaultSistemas, classificacoes as defaultClassificacoes, totalOrcado as defaultTotalOrcado, totalDespesasOrg, percentualTI, colaboradores, custoColabAno, maturidadeIndex as defaultMaturidade, meses, getMonthlyTotals as calcMonthlyTotals, formatCurrency, formatPercent } from "@/data/obzData";
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { Sistema, PontoMelhoria, defaultPontosMelhoria, sistemas as defaultSistemas, classificacoes as defaultClassificacoes, totalOrcado as defaultTotalOrcado, totalDespesasOrg, percentualTI, colaboradores, custoColabAno, meses, formatCurrency, formatPercent } from "@/data/obzData";
 
 export interface ImportLog {
   data: string;
   arquivo: string;
   linhas: number;
   modo: "substituir" | "mesclar";
+}
+
+const STORAGE_KEY = "obz_dashboard_data";
+
+interface StoredData {
+  sistemas: Sistema[];
+  classificacoes: { nome: string; valor: number; cor: string }[];
+  totalOrcado: number;
+  pontosMelhoria: PontoMelhoria[];
+  importLogs: ImportLog[];
+}
+
+function loadFromStorage(): StoredData | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function saveToStorage(data: StoredData) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // localStorage full or unavailable
+  }
 }
 
 interface ObzDataState {
@@ -16,7 +44,6 @@ interface ObzDataState {
   percentualTI: number;
   colaboradores: number;
   custoColabAno: number;
-  maturidadeIndex: number;
   pontosMelhoria: PontoMelhoria[];
   importLogs: ImportLog[];
 }
@@ -25,13 +52,13 @@ interface ObzDataContextType extends ObzDataState {
   setSistemas: (s: Sistema[]) => void;
   setClassificacoes: (c: { nome: string; valor: number; cor: string }[]) => void;
   setTotalOrcado: (v: number) => void;
-  setMaturidadeIndex: (v: number) => void;
   setPontosMelhoria: (p: PontoMelhoria[]) => void;
   addImportLog: (log: ImportLog) => void;
   getMonthlyTotals: () => { mes: string; previsto: number; realizado: number }[];
   getTotalRealizado: () => number;
   getTotalPrevistoAteMes: (mesIndex: number) => number;
   getTopFornecedores: () => { fornecedor: string; valor: number }[];
+  getNucleoData: () => { nucleo: string; valor: number }[];
   resetToDefaults: () => void;
 }
 
@@ -55,12 +82,23 @@ const classColors: Record<string, string> = {
 };
 
 export function ObzDataProvider({ children }: { children: React.ReactNode }) {
-  const [sistemas, setSistemas] = useState<Sistema[]>(defaultSistemas);
-  const [classificacoes, setClassificacoes] = useState(defaultClassificacoes);
-  const [totalOrcado, setTotalOrcado] = useState(defaultTotalOrcado);
-  const [maturidadeIndex, setMaturidadeIndex] = useState(defaultMaturidade);
-  const [pontosMelhoria, setPontosMelhoria] = useState<PontoMelhoria[]>(defaultPontosMelhoria);
-  const [importLogs, setImportLogs] = useState<ImportLog[]>([]);
+  const stored = loadFromStorage();
+  
+  const [sistemas, setSistemasState] = useState<Sistema[]>(stored?.sistemas || defaultSistemas);
+  const [classificacoes, setClassificacoesState] = useState(stored?.classificacoes || defaultClassificacoes);
+  const [totalOrcado, setTotalOrcadoState] = useState(stored?.totalOrcado || defaultTotalOrcado);
+  const [pontosMelhoria, setPontosMelhoriaState] = useState<PontoMelhoria[]>(stored?.pontosMelhoria || defaultPontosMelhoria);
+  const [importLogs, setImportLogs] = useState<ImportLog[]>(stored?.importLogs || []);
+
+  // Persist to localStorage whenever data changes
+  useEffect(() => {
+    saveToStorage({ sistemas, classificacoes, totalOrcado, pontosMelhoria, importLogs });
+  }, [sistemas, classificacoes, totalOrcado, pontosMelhoria, importLogs]);
+
+  const setSistemas = useCallback((s: Sistema[]) => setSistemasState(s), []);
+  const setClassificacoes = useCallback((c: { nome: string; valor: number; cor: string }[]) => setClassificacoesState(c), []);
+  const setTotalOrcado = useCallback((v: number) => setTotalOrcadoState(v), []);
+  const setPontosMelhoria = useCallback((p: PontoMelhoria[]) => setPontosMelhoriaState(p), []);
 
   const addImportLog = useCallback((log: ImportLog) => {
     setImportLogs(prev => [...prev, log]);
@@ -102,12 +140,23 @@ export function ObzDataProvider({ children }: { children: React.ReactNode }) {
       .slice(0, 10);
   }, [sistemas]);
 
+  const getNucleoData = useCallback(() => {
+    const map = new Map<string, number>();
+    sistemas.forEach(s => {
+      const nucleo = s.nucleo || "Outros";
+      map.set(nucleo, (map.get(nucleo) || 0) + s.valorAnual);
+    });
+    return Array.from(map.entries())
+      .map(([nucleo, valor]) => ({ nucleo, valor }))
+      .sort((a, b) => b.valor - a.valor);
+  }, [sistemas]);
+
   const resetToDefaults = useCallback(() => {
-    setSistemas(defaultSistemas);
-    setClassificacoes(defaultClassificacoes);
-    setTotalOrcado(defaultTotalOrcado);
-    setMaturidadeIndex(defaultMaturidade);
-    setPontosMelhoria(defaultPontosMelhoria);
+    setSistemasState(defaultSistemas);
+    setClassificacoesState(defaultClassificacoes);
+    setTotalOrcadoState(defaultTotalOrcado);
+    setPontosMelhoriaState(defaultPontosMelhoria);
+    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   return (
@@ -116,10 +165,10 @@ export function ObzDataProvider({ children }: { children: React.ReactNode }) {
       classificacoes, setClassificacoes,
       totalOrcado, setTotalOrcado,
       totalDespesasOrg, percentualTI, colaboradores, custoColabAno,
-      maturidadeIndex, setMaturidadeIndex,
       pontosMelhoria, setPontosMelhoria,
       importLogs, addImportLog,
       getMonthlyTotals, getTotalRealizado, getTotalPrevistoAteMes, getTopFornecedores,
+      getNucleoData,
       resetToDefaults,
     }}>
       {children}

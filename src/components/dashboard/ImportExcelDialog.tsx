@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function ImportExcelDialog({ open, onOpenChange }: Props) {
-  const { sistemas, totalOrcado, setSistemas, setClassificacoes, setTotalOrcado, setMaturidadeIndex, setPontosMelhoria, addImportLog } = useObzData();
+  const { sistemas, totalOrcado, setSistemas, setClassificacoes, setTotalOrcado, setPontosMelhoria, addImportLog } = useObzData();
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -57,7 +57,6 @@ export default function ImportExcelDialog({ open, onOpenChange }: Props) {
     setSistemas(finalSistemas);
     if (result.classificacoes) setClassificacoes(result.classificacoes);
     setTotalOrcado(result.totalOrcado || finalSistemas.reduce((s, si) => s + si.valorAnual, 0));
-    if (result.maturidadeIndex) setMaturidadeIndex(result.maturidadeIndex);
     if (result.pontosMelhoria && result.pontosMelhoria.length > 0) setPontosMelhoria(result.pontosMelhoria);
 
     addImportLog({
@@ -146,7 +145,6 @@ export default function ImportExcelDialog({ open, onOpenChange }: Props) {
                 <span className="font-semibold text-sm">Arquivo válido — {result.rowCount} sistemas</span>
               </div>
 
-              {/* Preview */}
               <div className="bg-muted/50 rounded-lg p-3 space-y-1 text-xs">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total TI (novo):</span>
@@ -158,35 +156,16 @@ export default function ImportExcelDialog({ open, onOpenChange }: Props) {
                     {variation > 0 ? '+' : ''}{variation.toFixed(1)}%
                   </span>
                 </div>
-                {result.maturidadeIndex && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">IMOTi:</span>
-                    <span className="font-mono font-medium">{result.maturidadeIndex}</span>
-                  </div>
-                )}
               </div>
 
-              {/* Mode selection */}
               <div className="space-y-2">
                 <p className="text-xs font-medium text-card-foreground">Modo de atualização:</p>
                 <label className="flex items-center gap-2 text-xs cursor-pointer">
-                  <input
-                    type="radio"
-                    name="mode"
-                    checked={mode === "substituir"}
-                    onChange={() => setMode("substituir")}
-                    className="accent-primary"
-                  />
+                  <input type="radio" name="mode" checked={mode === "substituir"} onChange={() => setMode("substituir")} className="accent-primary" />
                   Substituir base (padrão)
                 </label>
                 <label className="flex items-center gap-2 text-xs cursor-pointer">
-                  <input
-                    type="radio"
-                    name="mode"
-                    checked={mode === "mesclar"}
-                    onChange={() => setMode("mesclar")}
-                    className="accent-primary"
-                  />
+                  <input type="radio" name="mode" checked={mode === "mesclar"} onChange={() => setMode("mesclar")} className="accent-primary" />
                   Mesclar (append por chave: Sistema)
                 </label>
               </div>

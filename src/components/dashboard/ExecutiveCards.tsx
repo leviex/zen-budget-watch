@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, DollarSign, Target, AlertTriangle, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, DollarSign, Target, BarChart3, Layers } from "lucide-react";
 import { useObzData, formatCurrency, formatPercent } from "@/context/ObzDataContext";
 
 interface CardProps {
@@ -38,25 +38,17 @@ function StatusCard({ title, value, subtitle, icon, status = "neutral" }: CardPr
 }
 
 export default function ExecutiveCards() {
-  const { totalOrcado, getTotalRealizado, getTotalPrevistoAteMes } = useObzData();
+  const { sistemas, totalOrcado, getTotalRealizado } = useObzData();
   const realizado = getTotalRealizado();
-  const execucao = (realizado / totalOrcado) * 100;
-  const saldo = totalOrcado - realizado;
-  const previstoAteAgora = getTotalPrevistoAteMes(1);
-  const desvio = previstoAteAgora > 0 ? ((realizado - previstoAteAgora) / previstoAteAgora) * 100 : 0;
-  const forecast = (realizado / 2) * 12;
-  const forecastDesvio = ((forecast - totalOrcado) / totalOrcado) * 100;
-  const desvioStatus = Math.abs(desvio) <= 5 ? "success" : Math.abs(desvio) <= 10 ? "warning" : "danger";
-  const forecastStatus = forecastDesvio <= 0 ? "success" : forecastDesvio <= 10 ? "warning" : "danger";
+  const execucao = totalOrcado > 0 ? (realizado / totalOrcado) * 100 : 0;
+  const numSistemas = sistemas.filter(s => s.valorAnual > 0).length;
 
   return (
-    <div data-pdf-section data-pdf-page="1" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+    <div data-pdf-section data-pdf-page="1" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <StatusCard title="Orçado Anual" value={formatCurrency(totalOrcado)} subtitle="Exercício 2026" icon={<DollarSign className="h-5 w-5" />} status="neutral" />
-      <StatusCard title="Realizado" value={formatCurrency(realizado)} subtitle="Jan–Fev 2026" icon={<BarChart3 className="h-5 w-5" />} status="success" />
-      <StatusCard title="% Execução" value={formatPercent(execucao)} subtitle={`Meta proporcional: ${formatPercent((2/12)*100)}`} icon={<Target className="h-5 w-5" />} status={execucao > 20 ? "warning" : "success"} />
-      <StatusCard title="Saldo Disponível" value={formatCurrency(saldo)} subtitle={`${formatPercent(100 - execucao)} restante`} icon={<TrendingUp className="h-5 w-5" />} status="success" />
-      <StatusCard title="Desvio Acumulado" value={formatPercent(desvio)} subtitle={desvio > 0 ? "Acima do previsto" : "Abaixo do previsto"} icon={desvio > 5 ? <AlertTriangle className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />} status={desvioStatus} />
-      <StatusCard title="Forecast Anual" value={formatCurrency(forecast)} subtitle={`Desvio: ${formatPercent(forecastDesvio)}`} icon={<TrendingUp className="h-5 w-5" />} status={forecastStatus} />
+      <StatusCard title="Realizado" value={formatCurrency(realizado)} subtitle="Jan–Mar 2026" icon={<BarChart3 className="h-5 w-5" />} status="success" />
+      <StatusCard title="% Execução" value={formatPercent(execucao)} subtitle={`Meta proporcional: ${formatPercent((3/12)*100)}`} icon={<Target className="h-5 w-5" />} status={execucao > 30 ? "warning" : "success"} />
+      <StatusCard title="Nº de Sistemas" value={String(numSistemas)} subtitle="Contratos ativos" icon={<Layers className="h-5 w-5" />} status="neutral" />
     </div>
   );
 }
