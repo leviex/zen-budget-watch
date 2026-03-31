@@ -3,17 +3,18 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import ExecutiveCards from "@/components/dashboard/ExecutiveCards";
 import DashboardFilters from "@/components/dashboard/DashboardFilters";
 import MonthlyChart from "@/components/dashboard/MonthlyChart";
-import CategoryBreakdown from "@/components/dashboard/CategoryBreakdown";
-import TopExpenses from "@/components/dashboard/TopExpenses";
-import SupplierRanking from "@/components/dashboard/SupplierRanking";
-import MaturityIndicator from "@/components/dashboard/MaturityIndicator";
+import NucleoChart from "@/components/dashboard/NucleoChart";
+import NucleoRanking from "@/components/dashboard/NucleoRanking";
 import AlertsPanel from "@/components/dashboard/AlertsPanel";
+import TopExpenses from "@/components/dashboard/TopExpenses";
+import CategoryBreakdown from "@/components/dashboard/CategoryBreakdown";
 import SavingsOpportunities from "@/components/dashboard/SavingsOpportunities";
 import MatrizConsulta from "@/components/dashboard/MatrizConsulta";
 
 const Index = () => {
   const [mesFilter, setMesFilter] = useState<number | null>(null);
   const [classificacaoFilter, setClassificacaoFilter] = useState<string | null>(null);
+  const [nucleoFilter, setNucleoFilter] = useState<string | null>(null);
 
   return (
     <div id="dashboard-container" className="min-h-screen bg-background p-4 md:p-6 lg:p-8">
@@ -29,34 +30,46 @@ const Index = () => {
             setClassificacaoFilter={setClassificacaoFilter}
           />
           <p className="text-xs text-muted-foreground">
-            Atualizado em: Fevereiro 2026
+            Atualizado em: Março 2026
           </p>
         </div>
 
-        {/* Executive Cards */}
+        {/* [1] Executive Cards */}
         <div className="mb-6">
           <ExecutiveCards />
         </div>
 
-        {/* Main Chart */}
+        {/* [2] Main Chart: Orçado vs Realizado */}
         <div className="mb-6">
           <MonthlyChart mesFilter={mesFilter} classificacaoFilter={classificacaoFilter} />
         </div>
 
-        {/* Grid: Category + Top Expenses */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <CategoryBreakdown />
-          <TopExpenses classificacaoFilter={classificacaoFilter} />
+        {/* [3] Custo por Núcleo */}
+        <div className="mb-6">
+          <NucleoChart onNucleoClick={setNucleoFilter} selectedNucleo={nucleoFilter} />
         </div>
 
-        {/* Grid: Suppliers + Maturity + Alerts */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <SupplierRanking />
-          <MaturityIndicator />
+        {/* [4] Ranking por Núcleo */}
+        <div className="mb-6">
+          <NucleoRanking />
+        </div>
+
+        {/* [5] Alertas e Status */}
+        <div className="mb-6">
           <AlertsPanel />
         </div>
 
-        {/* Savings Opportunities */}
+        {/* [6] Top 10 Maiores Gastos */}
+        <div className="mb-6">
+          <TopExpenses classificacaoFilter={classificacaoFilter} />
+        </div>
+
+        {/* [7] Despesas por Classificação */}
+        <div className="mb-6">
+          <CategoryBreakdown />
+        </div>
+
+        {/* [8] Contratações com Possíveis Pontos de Economia */}
         <div className="mb-6">
           <SavingsOpportunities />
         </div>

@@ -6,7 +6,6 @@ const REQUIRED_SHEETS = [
   "Classificação Estratégica",
   "Matriz OBZ",
   "Ranking de Fornecedores",
-  "IMOTi - Calculo",
 ];
 
 const MESES_COLS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -21,7 +20,6 @@ export interface ImportResult {
   errors: ValidationError[];
   sistemas?: Sistema[];
   totalOrcado?: number;
-  maturidadeIndex?: number;
   classificacoes?: { nome: string; valor: number; cor: string }[];
   pontosMelhoria?: PontoMelhoria[];
   rowCount?: number;
@@ -51,7 +49,6 @@ export function validateAndParseExcel(buffer: ArrayBuffer): ImportResult {
     return { valid: false, errors: [{ sheet: "Arquivo", message: "Não foi possível ler o arquivo Excel." }] };
   }
 
-  // Check required sheets
   for (const name of REQUIRED_SHEETS) {
     if (!wb.SheetNames.find(s => s.trim() === name)) {
       errors.push({ sheet: name, message: `Aba "${name}" não encontrada.` });
@@ -86,7 +83,7 @@ export function validateAndParseExcel(buffer: ArrayBuffer): ImportResult {
   const matrizData = XLSX.utils.sheet_to_json<Record<string, any>>(matrizSheet, { defval: "" });
   if (matrizData.length > 0) {
     const headers = Object.keys(matrizData[0]);
-    const requiredCols = ["Sistema", "Valor Anual", "Classificacao", "Criticidade", "Fornecedor", "Contrato"];
+    const requiredCols = ["Sistema", "Valor Anual", "Classificacao", "Criticidade", "Fornecedor"];
     for (const col of requiredCols) {
       const altCol = col === "Classificacao" ? "Classificação" : col;
       if (findCol(headers, col) === -1 && findCol(headers, altCol) === -1) {
@@ -107,23 +104,13 @@ export function validateAndParseExcel(buffer: ArrayBuffer): ImportResult {
       errors.push({ sheet: "Ranking de Fornecedores", message: 'Coluna "VALOR TOTAL ANUAL" não encontrada.' });
   }
 
-  // Validate IMOTi
-  const imotiSheet = wb.Sheets["IMOTi - Calculo"];
-  const imotiData = XLSX.utils.sheet_to_json<Record<string, any>>(imotiSheet, { defval: "" });
-  if (imotiData.length === 0) {
-    errors.push({ sheet: "IMOTi - Calculo", message: "Aba vazia." });
-  }
-
   if (errors.length > 0) return { valid: false, errors };
 
-  // Parse data
   try {
     const sistemas = parseMatrizOBZ(matrizData);
     const totalOrcado = sistemas.reduce((s, si) => s + si.valorAnual, 0);
-    const maturidadeIndex = parseIMOTi(imotiData);
     const classificacoes = parseClassificacoes(classData);
 
-    // Parse Pontos de Melhoria (optional sheet)
     let pontosMelhoria: PontoMelhoria[] | undefined;
     const pontosSheet = wb.Sheets["Pontos de Melhoria"];
     if (pontosSheet) {
@@ -136,7 +123,6 @@ export function validateAndParseExcel(buffer: ArrayBuffer): ImportResult {
       errors: [],
       sistemas,
       totalOrcado,
-      maturidadeIndex,
       classificacoes,
       pontosMelhoria,
       rowCount: sistemas.length,
@@ -144,6 +130,13 @@ export function validateAndParseExcel(buffer: ArrayBuffer): ImportResult {
   } catch (e: any) {
     return { valid: false, errors: [{ sheet: "Matriz OBZ", message: `Erro ao processar dados: ${e.message}` }] };
   }
+}
+
+function parseCurrency(val: any): number {
+  if (typeof val === "number") return val;
+  if (!val) return 0;
+  const s = String(val).replace(/[R$\s.]/g, "").replace(",", ".");
+  return Number(s) || 0;
 }
 
 function parseMatrizOBZ(data: Record<string, any>[]): Sistema[] {
@@ -158,34 +151,35 @@ function parseMatrizOBZ(data: Record<string, any>[]): Sistema[] {
     const mensal: { previsto: number; realizado: number }[] = [];
     
     for (const mes of MESES_COLS) {
-      // Try to find Previsto/Realizado columns for this month
       const previstoKey = headers.find(h => {
         const hl = h.toLowerCase();
         return (hl.includes(mes.toLowerCase()) && hl.includes("prev")) || 
-               hl === `${mes.toLowerCase()}_previsto` ||
-               hl === `previsto_${mes.toLowerCase()}`;
+               hl === `${mes.toLowerCase()}_previsto`;
       });
       const realizadoKey = headers.find(h => {
         const hl = h.toLowerCase();
         return (hl.includes(mes.toLowerCase()) && hl.includes("real")) ||
-               hl === `${mes.toLowerCase()}_realizado` ||
-               hl === `realizado_${mes.toLowerCase()}`;
+               hl === `${mes.toLowerCase()}_realizado`;
       });
       
       mensal.push({
-        previsto: previstoKey ? (Number(row[previstoKey]) || 0) : 0,
-        realizado: realizadoKey ? (Number(row[realizadoKey]) || 0) : 0,
+        previsto: previstoKey ? parseCurrency(row[previstoKey]) : 0,
+        realizado: realizadoKey ? parseCurrency(row[realizadoKey]) : 0,
       });
     }
 
     return {
       nome: String(getVal("Sistema") || ""),
-      valorAnual: Number(getVal("Valor Anual")) || 0,
+      divisao: String(getVal("DIVISÃO") || getVal("Divisao") || getVal("DIVISAO") || ""),
+      nucleo: String(getVal("NÚCLEO") || getVal("Nucleo") || getVal("NUCLEO") || ""),
+      justificativaSetores: String(getVal("Justificativa") || ""),
+      valorAnual: parseCurrency(getVal("Valor Anual")),
       classificacao: String(getVal("Classifica") || ""),
       criticidade: Number(getVal("Criticidade")) || 2,
       fornecedor: String(getVal("Fornecedor") || ""),
       contrato: String(getVal("Contrato") || ""),
       sugestao: String(getVal("Substituição") || getVal("Otimização") || getVal("Sugestão") || ""),
+      renegociado: String(getVal("Renegociado") || ""),
       mensal,
     };
   }).filter(s => s.nome.trim() !== "");
@@ -199,37 +193,10 @@ function parseClassificacoes(data: Record<string, any>[]): { nome: string; valor
     const nome = String(row[classKey] || "");
     return {
       nome,
-      valor: Number(row[valorKey]) || 0,
+      valor: parseCurrency(row[valorKey]),
       cor: classColors[nome] || "#94a3b8",
     };
   }).filter(c => c.nome.trim() !== "");
-}
-
-function parseIMOTi(data: Record<string, any>[]): number {
-  // Try to find computed IMOTi value
-  for (const row of data) {
-    for (const val of Object.values(row)) {
-      if (typeof val === "string" && val.toLowerCase().includes("imoti")) {
-        // Look for numeric value in same row
-        for (const v of Object.values(row)) {
-          const n = Number(v);
-          if (!isNaN(n) && n > 0 && n <= 100) return n;
-        }
-      }
-    }
-  }
-  // Fallback: try to compute from weighted values
-  let totalWeighted = 0;
-  let totalWeight = 0;
-  for (const row of data) {
-    const vals = Object.values(row).map(v => Number(v)).filter(v => !isNaN(v) && v > 0);
-    if (vals.length >= 2) {
-      // Assume last is weight or score
-      totalWeighted += vals[0];
-      totalWeight++;
-    }
-  }
-  return totalWeight > 0 ? Math.round((totalWeighted / totalWeight) * 10) / 10 : 62.5;
 }
 
 function parsePontosMelhoria(data: Record<string, any>[]): PontoMelhoria[] {
@@ -240,11 +207,10 @@ function parsePontosMelhoria(data: Record<string, any>[]): PontoMelhoria[] {
       const solucaoKey = headers.find(h => h.toLowerCase().includes("solu")) || headers[0];
       const valorKey = headers.find(h => h.toLowerCase() === "valor" || h.toLowerCase().includes("valor")) || headers[1];
       const sugestaoKey = headers.find(h => h.toLowerCase().includes("sugest")) || headers[2];
-      // 4th column is the justification
       const justKey = headers[3] || "";
       const solucao = String(row[solucaoKey] || "").trim();
       const rawVal = row[valorKey];
-      const valor = rawVal ? (Number(String(rawVal).replace(/[R$\s.]/g, "").replace(",", ".")) || null) : null;
+      const valor = rawVal ? (parseCurrency(rawVal) || null) : null;
       const sugestao = String(row[sugestaoKey] || "").trim();
       const justificativa = justKey ? String(row[justKey] || "").trim() : "";
       return { solucao, valor, sugestao, justificativa };
@@ -255,32 +221,21 @@ function parsePontosMelhoria(data: Record<string, any>[]): PontoMelhoria[] {
 export function mergeSistemas(existing: Sistema[], incoming: Sistema[]): Sistema[] {
   const map = new Map<string, Sistema>();
   existing.forEach(s => map.set(s.nome, s));
-  incoming.forEach(s => {
-    if (map.has(s.nome)) {
-      // Update existing
-      map.set(s.nome, s);
-    } else {
-      map.set(s.nome, s);
-    }
-  });
+  incoming.forEach(s => map.set(s.nome, s));
   return Array.from(map.values());
 }
 
 export function generateTemplateXlsx(): ArrayBuffer {
   const wb = XLSX.utils.book_new();
 
-  // Painel Executivo
   const painelData = [
     { INDICADOR: "Total Orçado Anual", VALOR: 0 },
     { INDICADOR: "Total Realizado", VALOR: 0 },
     { INDICADOR: "% Execução", VALOR: 0 },
-    { INDICADOR: "Saldo Disponível", VALOR: 0 },
-    { INDICADOR: "Desvio Acumulado (%)", VALOR: 0 },
-    { INDICADOR: "Forecast Anual", VALOR: 0 },
+    { INDICADOR: "Nº de Sistemas", VALOR: 0 },
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(painelData), "Painel Executivo");
 
-  // Classificação Estratégica
   const classData = [
     { Classificacao: "Sistemas Core", "Valor Anual": 0 },
     { Classificacao: "Infraestrutura", "Valor Anual": 0 },
@@ -292,9 +247,11 @@ export function generateTemplateXlsx(): ArrayBuffer {
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(classData), "Classificação Estratégica");
 
-  // Matriz OBZ
   const matrizHeaders: Record<string, any> = {
     Sistema: "Exemplo Sistema",
+    "DIVISÃO": "DTI",
+    "NÚCLEO": "NTD",
+    "Justificativa Setores": "Descrição da justificativa",
     "Valor Anual": 0,
     Classificacao: "Infraestrutura",
     Criticidade: 1,
@@ -309,20 +266,9 @@ export function generateTemplateXlsx(): ArrayBuffer {
   }
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([matrizHeaders]), "Matriz OBZ");
 
-  // Ranking de Fornecedores
   const rankData = [{ FORNECEDOR: "Fornecedor Exemplo", "VALOR TOTAL ANUAL": 0 }];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rankData), "Ranking de Fornecedores");
 
-  // IMOTi - Calculo
-  const imotiData = [
-    { Dimensão: "Planejamento Orçamentário", Peso: 0.25, Nota: 0 },
-    { Dimensão: "Controle e Monitoramento", Peso: 0.30, Nota: 0 },
-    { Dimensão: "Governança e Compliance", Peso: 0.20, Nota: 0 },
-    { Dimensão: "Eficiência Operacional", Peso: 0.25, Nota: 0 },
-  ];
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(imotiData), "IMOTi - Calculo");
-
-  // Pontos de Melhoria
   const pontosData = [
     { "Solução": "Exemplo Sistema", "Valor": 0, "Sugestão": "Descrição da economia", "Justificativa": "Detalhes e contexto" },
   ];
