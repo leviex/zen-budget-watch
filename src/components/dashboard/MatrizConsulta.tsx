@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useObzData, formatCurrency, meses } from "@/context/ObzDataContext";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+type SortKey = "nome" | "nucleo" | "divisao" | "valorAnual" | "classificacao" | "fornecedor";
+type SortDir = "asc" | "desc";
 
 export default function MatrizConsulta() {
   const { sistemas } = useObzData();
@@ -10,16 +13,51 @@ export default function MatrizConsulta() {
   const [classFilter, setClassFilter] = useState<string>("all");
   const [nucleoFilter, setNucleoFilter] = useState<string>("all");
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("valorAnual");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const nucleos = [...new Set(sistemas.map(s => s.nucleo).filter(Boolean))].sort();
   const classes = [...new Set(sistemas.map(s => s.classificacao).filter(Boolean))].sort();
 
-  const filtered = sistemas.filter(s => {
-    if (search && !s.nome.toLowerCase().includes(search.toLowerCase()) && !s.fornecedor.toLowerCase().includes(search.toLowerCase())) return false;
-    if (classFilter !== "all" && s.classificacao !== classFilter) return false;
-    if (nucleoFilter !== "all" && s.nucleo !== nucleoFilter) return false;
-    return true;
-  });
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === "desc" ? "asc" : "desc");
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return <ArrowUpDown className="inline h-3 w-3 ml-1 opacity-40" />;
+    return sortDir === "desc"
+      ? <ArrowDown className="inline h-3 w-3 ml-1 text-primary" />
+      : <ArrowUp className="inline h-3 w-3 ml-1 text-primary" />;
+  };
+
+  const filtered = useMemo(() => {
+    let result = sistemas.filter(s => {
+      if (search && !s.nome.toLowerCase().includes(search.toLowerCase()) && !s.fornecedor.toLowerCase().includes(search.toLowerCase())) return false;
+      if (classFilter !== "all" && s.classificacao !== classFilter) return false;
+      if (nucleoFilter !== "all" && s.nucleo !== nucleoFilter) return false;
+      return true;
+    });
+
+    result.sort((a, b) => {
+      let aVal: any, bVal: any;
+      if (sortKey === "valorAnual") {
+        aVal = a.valorAnual; bVal = b.valorAnual;
+      } else {
+        aVal = (a[sortKey] || "").toLowerCase();
+        bVal = (b[sortKey] || "").toLowerCase();
+      }
+      if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return result;
+  }, [sistemas, search, classFilter, nucleoFilter, sortKey, sortDir]);
 
   return (
     <div className="bg-card rounded-lg p-6 shadow-card">
@@ -49,12 +87,24 @@ export default function MatrizConsulta() {
           <thead>
             <tr className="border-b border-border">
               <th className="text-left py-2 px-2 text-muted-foreground font-medium w-6"></th>
-              <th className="text-left py-2 px-2 text-muted-foreground font-medium">Sistema</th>
-              <th className="text-left py-2 px-2 text-muted-foreground font-medium">Núcleo</th>
-              <th className="text-left py-2 px-2 text-muted-foreground font-medium">Divisão</th>
-              <th className="text-right py-2 px-2 text-muted-foreground font-medium">Valor Anual</th>
-              <th className="text-left py-2 px-2 text-muted-foreground font-medium">Classificação</th>
-              <th className="text-left py-2 px-2 text-muted-foreground font-medium">Fornecedor</th>
+              <th className="text-left py-2 px-2 text-muted-foreground font-medium cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("nome")}>
+                Sistema <SortIcon col="nome" />
+              </th>
+              <th className="text-left py-2 px-2 text-muted-foreground font-medium cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("nucleo")}>
+                Núcleo <SortIcon col="nucleo" />
+              </th>
+              <th className="text-left py-2 px-2 text-muted-foreground font-medium cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("divisao")}>
+                Divisão <SortIcon col="divisao" />
+              </th>
+              <th className="text-right py-2 px-2 text-muted-foreground font-medium cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("valorAnual")}>
+                Valor Anual <SortIcon col="valorAnual" />
+              </th>
+              <th className="text-left py-2 px-2 text-muted-foreground font-medium cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("classificacao")}>
+                Classificação <SortIcon col="classificacao" />
+              </th>
+              <th className="text-left py-2 px-2 text-muted-foreground font-medium cursor-pointer select-none hover:text-foreground" onClick={() => handleSort("fornecedor")}>
+                Fornecedor <SortIcon col="fornecedor" />
+              </th>
               <th className="text-left py-2 px-2 text-muted-foreground font-medium">Sugestão</th>
             </tr>
           </thead>
